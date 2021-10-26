@@ -2,7 +2,8 @@ console.log(window.location.search);
 const itemContainer = document.querySelector(".item");
 const id = window.location.search.slice(4);
 const apiUrl = "http://localhost:3000/api/products/";
-const cart = [];
+const cart = JSON.parse(sessionStorage.getItem("cart")) || [];
+console.log(cart);
 const generateColors = function (colors) {
   return colors.reduce(
     (acc, color) => acc + `<option value="${color}">${color}</option>`,
@@ -79,13 +80,25 @@ const renderProduct = async function (url) {
   itemContainer.insertAdjacentHTML("afterbegin", markup);
   const btn = document.getElementById("addToCart");
   const quantityContainer = document.getElementById("quantity");
+  const colorContainer = document.getElementById("colors");
   console.log(quantityContainer.value);
 
   btn.addEventListener("click", function (e) {
-    product.quantity = quantityContainer.value;
-    console.log(product.quantity);
-    cart.push(product);
+    const prod = { ...product };
+    if (quantityContainer.value < 1 || !colorContainer.value) return;
+    const index = cart.findIndex((prod) => prod._id === id);
+    console.log(index);
+
+    if (index > -1 && cart[index].colors == colorContainer.value) {
+      cart[index].quantity += +quantityContainer.value;
+    } else {
+      prod.quantity = +quantityContainer.value;
+      prod.colors = colorContainer.value;
+      cart.push(prod);
+    }
+
     console.log(cart);
+    sessionStorage.setItem("cart", JSON.stringify(cart));
   });
 };
 

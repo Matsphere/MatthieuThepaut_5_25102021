@@ -1,4 +1,5 @@
 const cartContainer = document.getElementById("cart__items");
+const cart = JSON.parse(sessionStorage.getItem("cart")) || [];
 const renderCart = function (cart) {
   cart.forEach((product) => {
     cartContainer.insertAdjacentHTML(
@@ -27,3 +28,23 @@ const renderCart = function (cart) {
     );
   });
 };
+
+renderCart(cart);
+const deleteButtons = document.querySelectorAll(".deleteItem");
+const quantityContainers = document.querySelectorAll(".itemQuantity");
+quantityContainers.forEach((cont) => {
+  cont.addEventListener("change", function (e) {});
+});
+deleteButtons.forEach((btn) => {
+  btn.addEventListener("click", function (e) {
+    const id = e.target.closest(".cart__item").getAttribute("data-id");
+    console.log(id);
+    const index = cart.findIndex((prod) => prod._id === id);
+    console.log(index);
+    cart.splice(index, 1);
+    console.log(cart);
+
+    renderCart(cart);
+    sessionStorage.setItem("cart", JSON.stringify(cart));
+  });
+});
