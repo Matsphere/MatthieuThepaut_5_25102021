@@ -1,3 +1,5 @@
+if (URLSearchParams(document.location.search).get("id")) {};
+else {
 const createEl = function (tag, attributes, values) {
   const el = document.createElement(tag);
   if (attributes && values) {
@@ -157,3 +159,5 @@ const renderCart = function () {
 };
 
 renderCart();
+
+};
