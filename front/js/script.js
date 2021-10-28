@@ -3,8 +3,12 @@ const apiUrl = "http://localhost:3000/api/products/";
 const getById = function (id) {
   return document.getElementById(id);
 };
-const createEl = function (tag) {
-  return document.createElement(tag);
+const createEl = function (tag, attributes, values) {
+  const el = document.createElement(tag);
+  if (attributes && values) {
+    attributes.forEach((att, i) => el.setAttribute(att, values[i]));
+  }
+  return el;
 };
 
 const getProducts = async function (url) {
@@ -21,27 +25,21 @@ const getProducts = async function (url) {
 const renderProducts = async function (url) {
   try {
     const products = await getProducts(url);
-    console.log(products);
     const itemsContainer = getById("items");
     products.forEach((product) => {
-      let link = createEl("a");
-      link.setAttribute("href", `front/product.html?id=${product._id}`);
+      let link = createEl("a", ['href'], [`product.html?id=${product._id}`]);
 
       let article = createEl("article");
       link.appendChild(article);
 
-      let img = createEl("img");
-      img.setAttribute("src", product.imageUrl);
-      img.setAttribute("alt", product.altTxt);
+      let img = createEl("img", ['src', 'alt'], [ product.imageUrl, product.altTxt]);
       article.appendChild(img);
 
-      let titre = createEl("h3");
-      titre.setAttribute("class", "productName");
+      let titre = createEl("h3", ['class'], ["productName"]);
       titre.textContent = product.name;
       article.appendChild(titre);
 
-      let para = createEl("p");
-      para.setAttribute("class", "productDescription");
+      let para = createEl("p", ['class'], ["productDescription"]);
       para.textContent = product.description;
       article.appendChild(para);
 
