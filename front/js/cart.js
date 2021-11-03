@@ -1,163 +1,249 @@
-if (URLSearchParams(document.location.search).get("id")) {};
-else {
+const apiUrl = "http://localhost:3000/api/products/";
+const getById = function (id) {
+  return document.getElementById(id);
+};
 const createEl = function (tag, attributes, values) {
   const el = document.createElement(tag);
   if (attributes && values) {
-    attributes.forEach((att, i) => el.setAttribute(att, values[i]));
+    attributes.forEach((attr, i) => el.setAttribute(attr, values[i]));
   }
   return el;
 };
+const getProducts = async function (url) {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error("Un problème est survenu");
+    const data = response.json();
+    return data;
+  } catch (err) {
+    console.log(err.message);
+  }
+};
 
-const calculateTotals = function (cart) {
-  const totalQuantity = cart
-    ? cart.reduce(function (acc, product) {
+const createCart = async function (cart, apiUrl) {
+  const catalog = await getProducts(apiUrl);
+  const results = [];
+  cart.forEach(function (el, i) {
+    console.log(el);
+    const index = catalog.findIndex((item) => item._id === el._id);
+    const prod = { ...catalog[index] };
+    prod.colors = el.color;
+    prod.quantity = el.quantity;
+    results.push(prod);
+  });
+  return results;
+};
+const updateCart = function (
+  products,
+  cart,
+  quantity,
+  item,
+  priceCont,
+  quantityTotalCont,
+  priceTotalCont
+) {
+  const index = cart.findIndex(
+    (prod) => prod._id === item._id && prod.color === item.colors
+  );
+  cart[index].quantity = quantity;
+  products[index].quantity = quantity;
+  priceCont.textContent = products[index].price * quantity + "€";
+  updateTotals(products, quantityTotalCont, priceTotalCont);
+  localStorage.setItem("cart", JSON.stringify(cart));
+};
+
+const removeItemFromCart = function (products, cart, item) {
+  const index = cart.findIndex(
+    (prod) => prod._id === item._id && prod.color === item.color
+  );
+  cart.splice(index, 1);
+  products.splice(index, 1);
+  localStorage.setItem("cart", JSON.stringify(cart));
+};
+const calculateTotals = function (products) {
+  const totalQuantity = products
+    ? products.reduce(function (acc, product) {
         return acc + product.quantity;
       }, 0)
     : 0;
 
-  const totalPrice = cart
-    ? cart.reduce(function (acc, prod) {
+  const totalPrice = products
+    ? products.reduce(function (acc, prod) {
         return acc + prod.price * prod.quantity;
       }, 0)
     : 0;
   return [totalQuantity, totalPrice];
 };
 
-const updateCart = function (
+const updateTotals = function (products, quantity, price) {
+  const totals = calculateTotals(products);
+  quantity.textContent = totals[0];
+  price.textContent = totals[1];
+};
+
+const bindEventQuantity = function (
+  cont,
+  products,
   cart,
-  quantity,
   product,
-  span1,
-  span2,
-  para1,
-  para2
+  contentPrice,
+  quantityTotalCont,
+  priceTotalCont
 ) {
-  const index = cart.findIndex((prod) => prod._id === product._id);
-  cart[index].quantity = quantity;
-  para2.textContent = quantity;
-  para1.textContent = cart[index].price * quantity + "€";
-  updateTotals(cart, span1, span2);
-  localStorage.setItem("cart", JSON.stringify(cart));
+  cont.addEventListener("change", function () {
+    const quantity = Number(cont.value);
+    updateCart(
+      products,
+      cart,
+      quantity,
+      product,
+      contentPrice,
+      quantityTotalCont,
+      priceTotalCont
+    );
+  });
 };
 
-const removeItemFromCart = function (cart, product) {
-  const index = cart.findIndex((prod) => prod._id === product._id);
-  cart.splice(index, 1);
-  localStorage.setItem("cart", JSON.stringify(cart));
+const bindEventDelete = function (
+  cont,
+  products,
+  cart,
+  product,
+  quantityTotalCont,
+  priceTotalCont,
+  article
+) {
+  cont.addEventListener("click", function () {
+    removeItemFromCart(products, cart, product);
+    updateTotals(products, quantityTotalCont, priceTotalCont);
+    article.remove();
+  });
+};
+const checkName = function () {
+  const firstName = getById("firstName").value;
+  const lastName = getById("lastName").value;
+  const specialSymbol = /[\u0021-\u0040]?[a-zéèàçê]/;
+};
+const bindEventOrder = function () {
+  const btn = getById("order");
+  btn.addEventListener("click", function (e) {
+    e.preventDefault();
+  });
 };
 
-const updateTotals = function (cart, span1, span2) {
-  const totals = calculateTotals(cart);
-  span1.textContent = totals[0];
-  span2.textContent = totals[1];
-};
-const renderCart = function () {
+const init = async function () {
+  const quantityTotalCont = getById("totalQuantity");
+  const priceTotalCont = getById("totalPrice");
   const cartContainer = document.getElementById("cart__items");
   const cart = JSON.parse(localStorage.getItem("cart")) || [];
-  cart.forEach((product) => {
-    let article = createEl(
+  const products = await createCart(cart, apiUrl);
+
+  console.log(products);
+  products.forEach((product) => {
+    const article = createEl(
       "article",
       ["class", "data-id"],
       ["cart__item", product._id]
     );
     cartContainer.appendChild(article);
 
-    let div1 = createEl("div", ["class"], ["cart__item__img"]);
-    article.appendChild(div1);
+    const divImg = createEl("div", ["class"], ["cart__item__img"]);
+    article.appendChild(divImg);
 
-    let img = createEl(
+    const img = createEl(
       "img",
       ["src", "alt"],
       [product.imageUrl, product.altTxt]
     );
-    div1.appendChild(img);
+    divImg.appendChild(img);
 
-    let div2 = createEl("div", ["class"], ["cart__item__content"]);
-    article.appendChild(div2);
+    const divContent = createEl("div", ["class"], ["cart__item__content"]);
+    article.appendChild(divContent);
 
-    let div3 = createEl("div", ["class"], ["cart__item__content__titlePrice"]);
-    div2.appendChild(div3);
+    const divContentPrice = createEl(
+      "div",
+      ["class"],
+      ["cart__item__content__titlePrice"]
+    );
+    divContent.appendChild(divContentPrice);
 
-    let titre = createEl("h2");
-    titre.textContent = product.name;
-    div3.appendChild(titre);
+    const contentTitle = createEl("h2");
+    contentTitle.textContent = product.name;
+    divContentPrice.appendChild(contentTitle);
 
-    let para1 = createEl("p");
-    para1.textContent = product.price * product.quantity + "€";
-    div3.appendChild(para1);
+    const contentPrice = createEl("p");
+    contentPrice.textContent = product.price * product.quantity + "€";
+    divContentPrice.appendChild(contentPrice);
 
-    let div4 = createEl("div", ["class"], ["cart__item__content__settings"]);
-    div2.appendChild(div4);
+    const divContentSettings = createEl(
+      "div",
+      ["class"],
+      ["cart__item__content__settings"]
+    );
+    divContent.appendChild(divContentSettings);
 
-    let div5 = createEl(
+    const divSettingsColor = createEl(
       "div",
       ["class"],
       ["cart__item__content__settings__color"]
     );
-    div4.appendChild(div5);
+    divContentSettings.appendChild(divSettingsColor);
 
-    let para2 = createEl("p");
-    para2.textContent = product.color;
-    div5.appendChild(para2);
+    const settingsColor = createEl("p");
+    settingsColor.textContent = product.colors;
+    divContentSettings.appendChild(settingsColor);
 
-    let div6 = createEl(
+    const divSettingsQuantity = createEl(
       "div",
       ["class"],
       ["cart__item__content__settings__quantity"]
     );
-    div4.appendChild(div6);
+    divContentSettings.appendChild(divSettingsQuantity);
 
-    let para3 = createEl("p");
-    para3.textContent = product.quantity;
-    div6.appendChild(para3);
+    const settingsQuantity = createEl("p");
+    settingsQuantity.textContent = "Qté : ";
+    divContentSettings.appendChild(settingsQuantity);
 
-    let input = createEl(
+    const settingsQuantityCont = createEl(
       "input",
       ["type", "class", "name", "min", "max", "value"],
       ["number", "itemQuantity", "itemQuantity", "1", "100", product.quantity]
     );
-    div6.appendChild(input);
-    input.addEventListener("change", function (e) {
-      const cart = JSON.parse(localStorage.getItem("cart")) || [];
-      const quantity = Number(input.value);
-      updateCart(cart, quantity, product, span1, span2, para1, para3);
-    });
+    divContentSettings.appendChild(settingsQuantityCont);
+    bindEventQuantity(
+      settingsQuantityCont,
+      products,
+      cart,
+      product,
+      contentPrice,
+      quantityTotalCont,
+      priceTotalCont
+    );
 
-    let div7 = createEl(
+    const divSettingsDelete = createEl(
       "div",
       ["class"],
       ["cart__item__content__settings__delete"]
     );
-    div4.appendChild(div7);
+    divContentSettings.appendChild(divSettingsDelete);
 
-    let para4 = createEl("p", ["class"], ["deleteItem"]);
-    para4.textContent = "Supprimer";
-    div7.appendChild(para4);
-    para4.addEventListener("click", function (e) {
-      const cart = JSON.parse(localStorage.getItem("cart")) || [];
-      removeItemFromCart(cart, product);
-      updateTotals(cart, span1, span2);
-      article.remove();
-    });
+    const settingsDelete = createEl("p", ["class"], ["deleteItem"]);
+    settingsDelete.textContent = "Supprimer";
+    divSettingsDelete.appendChild(settingsDelete);
+    bindEventDelete(
+      settingsDelete,
+      products,
+      cart,
+      product,
+      quantityTotalCont,
+      priceTotalCont,
+      article
+    );
   });
 
-  const totals = calculateTotals(cart);
-  let para5 = createEl("p");
-  let node1 = document.createTextNode("Total (");
-  let node2 = document.createTextNode(" articles) : ");
-  let node3 = document.createTextNode(" €");
-  let span1 = createEl("span", ["id"], ["totalQuantity"]);
-  let span2 = createEl("span", ["id"], ["totalPrice"]);
-  updateTotals(cart, span1, span2);
+  updateTotals(products, quantityTotalCont, priceTotalCont);
 
-  para5.appendChild(node1);
-  para5.appendChild(span1);
-  para5.appendChild(node2);
-  para5.appendChild(span2);
-  para5.appendChild(node3);
-  document.querySelector(".cart__price").appendChild(para5);
+  bindEventOrder();
 };
 
-renderCart();
-
-};
+init();
