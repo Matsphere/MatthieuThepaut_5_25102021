@@ -212,12 +212,16 @@ const bindEventOrder = function (cart, apiUrl) {
           products: products,
         }),
       })
-        .then((response) => response.json())
-        .then((data) => {
-          console.log(data.orderId);
-          window.location.href = `confirmation.html?id=${data.orderId}`;
+        .then((response) => {
+          if (!response.ok) throw new Error("Un problème est survenu");
+          else return response.json();
         })
-        .catch((err) => console.log(err));
+        .then((data) => {
+          if (data.orderId) {
+            window.location.href = `confirmation.html?id=${data.orderId}`;
+          } else throw new Error("Un problème est survenu!");
+        })
+        .catch((err) => console.log(err.message));
     } else return;
   });
 };
