@@ -122,128 +122,211 @@ const bindEventDelete = function (
 const checkName = function () {
   const firstName = getById("firstName").value;
   const lastName = getById("lastName").value;
-  const specialSymbol = /[\u0021-\u0040]?[a-zéèàçê]/;
+  const pattern =
+    /^[a-zA-ZàáâäãåąčćęèéêëėįìíîïłńòóôöõøùúûüųūÿýżźñçčšžÀÁÂÄÃÅĄĆČĖĘÈÉÊËÌÍÎÏĮŁŃÒÓÔÖÕØÙÚÛÜŲŪŸÝŻŹÑßÇŒÆČŠŽ∂ð ,.'-]+$/u;
+  if (pattern.test(firstName)) {
+    if (pattern.test(lastName)) {
+      return true;
+    } else {
+      getById("lastNameErrorMsg").textContent = "Nom de famille invalide!";
+      return false;
+    }
+  } else {
+    getById("firstNameErrorMsg").textContent = "Prénom invalide!";
+    return false;
+  }
 };
-const bindEventOrder = function () {
+
+const checkAddress = function () {
+  const address = getById("address").value;
+  const pattern = /^[0-9]{0,3} ?[a-zA-Z\s,-]+ ?([0-9]{2}|[0-9]{5})?$/;
+  if (pattern.test(address)) {
+    return true;
+  } else {
+    getById("addressErrorMsg").textContent = "Adresse invalide!";
+    return false;
+  }
+};
+
+const checkCity = function () {
+  const city = getById("city").value;
+  const pattern =
+    /^[a-zA-ZàáâäãåąčćęèéêëėįìíîïłńòóôöõøùúûüųūÿýżźñçčšžÀÁÂÄÃÅĄĆČĖĘÈÉÊËÌÍÎÏĮŁŃÒÓÔÖÕØÙÚÛÜŲŪŸÝŻŹÑßÇŒÆČŠŽ∂ð]+(( |-)?[a-zA-ZàáâäãåąčćęèéêëėįìíîïłńòóôöõøùúûüųūÿýżźñçčšžÀÁÂÄÃÅĄĆČĖĘÈÉÊËÌÍÎÏĮŁŃÒÓÔÖÕØÙÚÛÜŲŪŸÝŻŹÑßÇŒÆČŠŽ∂ð])*$/;
+  if (pattern.test(city)) {
+    return true;
+  } else {
+    getById("cityErrorMsg").textContent = "Ville invalide!";
+    return false;
+  }
+};
+
+const checkEmail = function () {
+  const email = getById("email").value;
+  const pattern =
+    /^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/i;
+  if (pattern.test(email)) {
+    return true;
+  } else {
+    getById("emailErrorMsg").textContent = "Email invalide!";
+    return false;
+  }
+};
+const bindEventOrder = function (cart, apiUrl) {
   const btn = getById("order");
-  btn.addEventListener("click", function (e) {
+  btn.addEventListener("click", async function (e) {
     e.preventDefault();
+    if (checkName() && checkAddress() && checkCity() && checkEmail()) {
+      const products = cart.map((el) => el._id);
+      console.log(products);
+      const contact = {
+        firstName: getById("firstName").value,
+        lastName: getById("lastName").value,
+        address: getById("address").value,
+        city: getById("city").value,
+        email: getById("email").value,
+        products: products,
+      };
+      console.log(contact);
+
+      fetch(apiUrl + "order", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contact: contact,
+          products: products,
+        }),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          console.log(data.orderId);
+          window.location.href = `confirmation.html?id=${data.orderId}`;
+        })
+        .catch((err) => console.log(err));
+    } else return;
   });
 };
 
 const init = async function () {
-  const quantityTotalCont = getById("totalQuantity");
-  const priceTotalCont = getById("totalPrice");
-  const cartContainer = document.getElementById("cart__items");
-  const cart = JSON.parse(localStorage.getItem("cart")) || [];
-  const products = await createCart(cart, apiUrl);
+  if (new URLSearchParams(document.location.search).get("id")) {
+    getById("orderId").textContent = new URLSearchParams(
+      document.location.search
+    ).get("id");
+  } else {
+    const quantityTotalCont = getById("totalQuantity");
+    const priceTotalCont = getById("totalPrice");
+    const cartContainer = document.getElementById("cart__items");
+    const cart = JSON.parse(localStorage.getItem("cart")) || [];
+    const products = await createCart(cart, apiUrl);
 
-  console.log(products);
-  products.forEach((product) => {
-    const article = createEl(
-      "article",
-      ["class", "data-id"],
-      ["cart__item", product._id]
-    );
-    cartContainer.appendChild(article);
+    console.log(products);
+    products.forEach((product) => {
+      const article = createEl(
+        "article",
+        ["class", "data-id"],
+        ["cart__item", product._id]
+      );
+      cartContainer.appendChild(article);
 
-    const divImg = createEl("div", ["class"], ["cart__item__img"]);
-    article.appendChild(divImg);
+      const divImg = createEl("div", ["class"], ["cart__item__img"]);
+      article.appendChild(divImg);
 
-    const img = createEl(
-      "img",
-      ["src", "alt"],
-      [product.imageUrl, product.altTxt]
-    );
-    divImg.appendChild(img);
+      const img = createEl(
+        "img",
+        ["src", "alt"],
+        [product.imageUrl, product.altTxt]
+      );
+      divImg.appendChild(img);
 
-    const divContent = createEl("div", ["class"], ["cart__item__content"]);
-    article.appendChild(divContent);
+      const divContent = createEl("div", ["class"], ["cart__item__content"]);
+      article.appendChild(divContent);
 
-    const divContentPrice = createEl(
-      "div",
-      ["class"],
-      ["cart__item__content__titlePrice"]
-    );
-    divContent.appendChild(divContentPrice);
+      const divContentPrice = createEl(
+        "div",
+        ["class"],
+        ["cart__item__content__titlePrice"]
+      );
+      divContent.appendChild(divContentPrice);
 
-    const contentTitle = createEl("h2");
-    contentTitle.textContent = product.name;
-    divContentPrice.appendChild(contentTitle);
+      const contentTitle = createEl("h2");
+      contentTitle.textContent = product.name;
+      divContentPrice.appendChild(contentTitle);
 
-    const contentPrice = createEl("p");
-    contentPrice.textContent = product.price * product.quantity + "€";
-    divContentPrice.appendChild(contentPrice);
+      const contentPrice = createEl("p");
+      contentPrice.textContent = product.price * product.quantity + "€";
+      divContentPrice.appendChild(contentPrice);
 
-    const divContentSettings = createEl(
-      "div",
-      ["class"],
-      ["cart__item__content__settings"]
-    );
-    divContent.appendChild(divContentSettings);
+      const divContentSettings = createEl(
+        "div",
+        ["class"],
+        ["cart__item__content__settings"]
+      );
+      divContent.appendChild(divContentSettings);
 
-    const divSettingsColor = createEl(
-      "div",
-      ["class"],
-      ["cart__item__content__settings__color"]
-    );
-    divContentSettings.appendChild(divSettingsColor);
+      const divSettingsColor = createEl(
+        "div",
+        ["class"],
+        ["cart__item__content__settings__color"]
+      );
+      divContentSettings.appendChild(divSettingsColor);
 
-    const settingsColor = createEl("p");
-    settingsColor.textContent = product.colors;
-    divContentSettings.appendChild(settingsColor);
+      const settingsColor = createEl("p");
+      settingsColor.textContent = product.colors;
+      divContentSettings.appendChild(settingsColor);
 
-    const divSettingsQuantity = createEl(
-      "div",
-      ["class"],
-      ["cart__item__content__settings__quantity"]
-    );
-    divContentSettings.appendChild(divSettingsQuantity);
+      const divSettingsQuantity = createEl(
+        "div",
+        ["class"],
+        ["cart__item__content__settings__quantity"]
+      );
+      divContentSettings.appendChild(divSettingsQuantity);
 
-    const settingsQuantity = createEl("p");
-    settingsQuantity.textContent = "Qté : ";
-    divContentSettings.appendChild(settingsQuantity);
+      const settingsQuantity = createEl("p");
+      settingsQuantity.textContent = "Qté : ";
+      divContentSettings.appendChild(settingsQuantity);
 
-    const settingsQuantityCont = createEl(
-      "input",
-      ["type", "class", "name", "min", "max", "value"],
-      ["number", "itemQuantity", "itemQuantity", "1", "100", product.quantity]
-    );
-    divContentSettings.appendChild(settingsQuantityCont);
-    bindEventQuantity(
-      settingsQuantityCont,
-      products,
-      cart,
-      product,
-      contentPrice,
-      quantityTotalCont,
-      priceTotalCont
-    );
+      const settingsQuantityCont = createEl(
+        "input",
+        ["type", "class", "name", "min", "max", "value"],
+        ["number", "itemQuantity", "itemQuantity", "1", "100", product.quantity]
+      );
+      divContentSettings.appendChild(settingsQuantityCont);
+      bindEventQuantity(
+        settingsQuantityCont,
+        products,
+        cart,
+        product,
+        contentPrice,
+        quantityTotalCont,
+        priceTotalCont
+      );
 
-    const divSettingsDelete = createEl(
-      "div",
-      ["class"],
-      ["cart__item__content__settings__delete"]
-    );
-    divContentSettings.appendChild(divSettingsDelete);
+      const divSettingsDelete = createEl(
+        "div",
+        ["class"],
+        ["cart__item__content__settings__delete"]
+      );
+      divContentSettings.appendChild(divSettingsDelete);
 
-    const settingsDelete = createEl("p", ["class"], ["deleteItem"]);
-    settingsDelete.textContent = "Supprimer";
-    divSettingsDelete.appendChild(settingsDelete);
-    bindEventDelete(
-      settingsDelete,
-      products,
-      cart,
-      product,
-      quantityTotalCont,
-      priceTotalCont,
-      article
-    );
-  });
+      const settingsDelete = createEl("p", ["class"], ["deleteItem"]);
+      settingsDelete.textContent = "Supprimer";
+      divSettingsDelete.appendChild(settingsDelete);
+      bindEventDelete(
+        settingsDelete,
+        products,
+        cart,
+        product,
+        quantityTotalCont,
+        priceTotalCont,
+        article
+      );
+    });
 
-  updateTotals(products, quantityTotalCont, priceTotalCont);
+    updateTotals(products, quantityTotalCont, priceTotalCont);
 
-  bindEventOrder();
+    bindEventOrder(cart, apiUrl);
+  }
 };
 
 init();
