@@ -60,6 +60,16 @@ const removeItemFromCart = function (products, cart, item) {
   products.splice(index, 1);
   localStorage.setItem("cart", JSON.stringify(cart));
 };
+
+const filterCart = function (cart) {
+  const results = [];
+  cart.forEach((el) => {
+    if (results.findIndex((id) => id === el._id) >= 0) {
+      results.push(el._id);
+    }
+    return results;
+  });
+};
 const calculateTotals = function (products) {
   const totalQuantity = products
     ? products.reduce(function (acc, product) {
@@ -175,8 +185,12 @@ const bindEventOrder = function (cart, apiUrl) {
   const btn = getById("order");
   btn.addEventListener("click", async function (e) {
     e.preventDefault();
+    if (!cart) {
+      alert("Panier vide");
+      return;
+    }
     if (checkName() && checkAddress() && checkCity() && checkEmail()) {
-      const products = cart.map((el) => el._id);
+      const products = filterCart(cart);
       console.log(products);
       const contact = {
         firstName: getById("firstName").value,
