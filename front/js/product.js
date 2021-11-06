@@ -1,7 +1,18 @@
 const apiUrl = "http://localhost:3000/api/products/";
+/**
+ * @param {string} id of an element
+ * @returns {element} Html element linked to the id
+ */
 const getById = function (id) {
   return document.getElementById(id);
 };
+/**
+ * Creates an html element
+ * @param {tag} tag of the html element to create
+ * @param {array} attributes array of all attributes to set
+ * @param {array} values array of all values of the attributes
+ * @returns {element} the element created
+ */
 const createEl = function (tag, attributes, values) {
   const el = document.createElement(tag);
   if (attributes && values) {
@@ -9,7 +20,11 @@ const createEl = function (tag, attributes, values) {
   }
   return el;
 };
-
+/**
+ * Bind an event listener to add to cart when the button is pressed
+ * @param {Object} product object of the product
+ * @param {string} id of the product
+ */
 const bindEvent = function (product, id) {
   const button = getById("addToCart");
   const colorCont = getById("colors");
@@ -22,6 +37,13 @@ const bindEvent = function (product, id) {
     addToCart(product, quantityCont, colorCont, id);
   });
 };
+/**
+ * Adds the product to the cart
+ * @param {Object} product of theproduct
+ * @param {number} quantity of products
+ * @param {string} color of the product
+ * @param {string} id of the product
+ */
 const addToCart = function (product, quantity, color, id) {
   const cart = JSON.parse(localStorage.getItem("cart")) || [];
   const prod = {
@@ -42,7 +64,13 @@ const addToCart = function (product, quantity, color, id) {
   localStorage.setItem("cart", JSON.stringify(cart));
   console.log(cart);
 };
-
+/**
+ * Checks if the product is already in the cart
+ * @param {array} cart containing the id, the color and quantity of the products added
+ * @param {string} color of the current product being selected
+ * @param {string} id of the current product being selected
+ * @returns Returns the index of the product in the cart if the product is already in it. Otherwise returns false
+ */
 const alreadyInCart = function (cart, color, id) {
   const index = cart.findIndex(
     (prod) => prod.color === color.value && prod._id === id
@@ -50,11 +78,21 @@ const alreadyInCart = function (cart, color, id) {
   if (index > -1) return index;
   else return false;
 };
+/**
+ * Generates the color option HTML element
+ * @param {string} color option of the product
+ * @returns an html element for the color option
+ */
 const generateColor = function (color) {
   const option = createEl("option", ["value"], [color]);
   option.textContent = color;
   return option;
 };
+/**
+ * Get the current product from the API
+ * @param {string} url of the Api and the id of the product
+ * @returns {object} an object containing the current products info
+ */
 const getProduct = async function (url) {
   try {
     const response = await fetch(url);
@@ -65,6 +103,11 @@ const getProduct = async function (url) {
     console.log(err);
   }
 };
+
+/**
+ * Creates the product card and adds the event listener to add the product to cart
+ * @param {string} url of thr API
+ */
 const renderProduct = async function (url) {
   const id = new URLSearchParams(document.location.search).get("id");
   const product = await getProduct(url + id);

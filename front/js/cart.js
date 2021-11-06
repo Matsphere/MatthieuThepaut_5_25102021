@@ -1,7 +1,18 @@
 const apiUrl = "http://localhost:3000/api/products/";
+/**
+ * @param {string} id of an element
+ * @returns {element} Html element linked to the id
+ */
 const getById = function (id) {
   return document.getElementById(id);
 };
+/**
+ * Creates an html element
+ * @param {tag} tag of the html element to create
+ * @param {array} array of all attributes to set
+ * @param {array} array of all values of the attributes
+ * @returns {element} the element created
+ */
 const createEl = function (tag, attributes, values) {
   const el = document.createElement(tag);
   if (attributes && values) {
@@ -9,6 +20,11 @@ const createEl = function (tag, attributes, values) {
   }
   return el;
 };
+/**
+ * Get all the products from the API
+ * @param {string} url of the Api
+ * @returns {array} an array of all the products
+ */
 const getProducts = async function (url) {
   try {
     const response = await fetch(url);
@@ -19,7 +35,12 @@ const getProducts = async function (url) {
     console.log(err.message);
   }
 };
-
+/**
+ * Filters the product in the cart from the catalog of all products
+ * @param {array} cart containing the id, color and quantity for each product selected
+ * @param {string} apiUrl url of the api
+ * @returns {array} an array containing the objects of the products in the cart
+ */
 const createCart = async function (cart, apiUrl) {
   const catalog = await getProducts(apiUrl);
   const results = [];
@@ -33,6 +54,16 @@ const createCart = async function (cart, apiUrl) {
   });
   return results;
 };
+/**
+ * Updates the quantity of products in the cart and the information on the page (quantity, price, total price and total quantity)
+ * @param {array} products an array containing the products in the cart
+ * @param {array} cart containing the id, color and quantity for each product selected
+ * @param {number} quantity new quantity of the product
+ * @param {object} item Product being updated
+ * @param {Object} priceCont Html element containing the price of the product being updated
+ * @param {Object} quantityTotalCont Html element containing the total quantity of products in the cart
+ * @param {object} priceTotalCont Html element containing the total price of the products in the cart
+ */
 const updateCart = function (
   products,
   cart,
@@ -51,7 +82,12 @@ const updateCart = function (
   updateTotals(products, quantityTotalCont, priceTotalCont);
   localStorage.setItem("cart", JSON.stringify(cart));
 };
-
+/**
+ * Removes the item from the cart
+ * @param {Array} products an array containing the products in the cart
+ * @param {Array} cart containing the id, color and quantity for each product selected
+ * @param {object} item Product being removed
+ */
 const removeItemFromCart = function (products, cart, item) {
   const index = cart.findIndex(
     (prod) => prod._id === item._id && prod.color === item.color
@@ -61,6 +97,10 @@ const removeItemFromCart = function (products, cart, item) {
   localStorage.setItem("cart", JSON.stringify(cart));
 };
 
+/**
+ * filters the cart to extract the id of the products ordered
+ * @param {array} cart containing the id, color and quantity for each product selected
+ */
 const filterCart = function (cart) {
   const results = [];
   cart.forEach((el) => {
@@ -70,6 +110,11 @@ const filterCart = function (cart) {
     return results;
   });
 };
+/**
+ * Calaculate the total quantity and price of the products in the cart
+ * @param {array} products an array containing the products in the cart
+ * @returns {array} [Total quantity of products(number), Total price of the products(number)]
+ */
 const calculateTotals = function (products) {
   const totalQuantity = products
     ? products.reduce(function (acc, product) {
@@ -84,13 +129,27 @@ const calculateTotals = function (products) {
     : 0;
   return [totalQuantity, totalPrice];
 };
-
+/**
+ * Updates the total quantity of products and the total price
+ * @param {Array} products an array containing the products in the cart
+ * @param {Object} quantity Html element containing the total quantity of products in the cart
+ * @param {Object} price Html element containing the total price of the products in the cart
+ */
 const updateTotals = function (products, quantity, price) {
   const totals = calculateTotals(products);
   quantity.textContent = totals[0];
   price.textContent = totals[1];
 };
-
+/**
+ * Adds the event listener to update the quantity of products
+ * @param {Object} cont HTML input element containing the quantity of the product
+ * @param {Array} products an array containing the products in the cart
+ * @param {Array} cart containing the id, color and quantity for each product selected
+ * @param {Object} product Product being updated
+ * @param {Object} contentPrice Html element containing the price of the product being updated
+ * @param {Object} quantityTotalCont Html element containing the total quantity of products in the cart
+ * @param {object} priceTotalCont Html element containing the total price of the products in the cart
+ */
 const bindEventQuantity = function (
   cont,
   products,
@@ -113,7 +172,16 @@ const bindEventQuantity = function (
     );
   });
 };
-
+/**
+ Adds the event listener to update the quantity of products
+ * @param {Object} cont HTML element on which the delete event is added
+ * @param {Array} products an array containing the products in the cart
+ * @param {Array} cart containing the id, color and quantity for each product selected
+ * @param {Object} product Product being removed
+ * @param {Object} quantityTotalCont Html element containing the total quantity of products in the cart
+ * @param {object} priceTotalCont Html element containing the total price of the products in the cart
+ * @param {Object} article Html article element being removed for the DOM
+ */
 const bindEventDelete = function (
   cont,
   products,
@@ -129,6 +197,10 @@ const bindEventDelete = function (
     article.remove();
   });
 };
+/**
+ * Checks the format of the first name and last name input field
+ * @returns True if the names are correctly written, False otherwise
+ */
 const checkName = function () {
   const firstName = getById("firstName").value;
   const lastName = getById("lastName").value;
@@ -146,7 +218,10 @@ const checkName = function () {
     return false;
   }
 };
-
+/**
+ * Checks the format of the address input field
+ * @returns True if the address is correctly written, False otherwise
+ */
 const checkAddress = function () {
   const address = getById("address").value;
   const pattern = /^[0-9]{0,3} ?[a-zA-Z\s,-]+ ?([0-9]{2}|[0-9]{5})?$/;
@@ -157,7 +232,10 @@ const checkAddress = function () {
     return false;
   }
 };
-
+/**
+ * Checks the format of the city input field
+ * @returns True if the city is correctly written, False otherwise
+ */
 const checkCity = function () {
   const city = getById("city").value;
   const pattern =
@@ -169,7 +247,10 @@ const checkCity = function () {
     return false;
   }
 };
-
+/**
+ * Checks the format of the email input field
+ * @returns True if the email is correctly written, False otherwise
+ */
 const checkEmail = function () {
   const email = getById("email").value;
   const pattern =
@@ -181,6 +262,11 @@ const checkEmail = function () {
     return false;
   }
 };
+/**
+ * Adds the event listener to validate the order and send the post request
+ * @param {Array} cart containing the id, color and quantity for each product selected
+ * @param {string} apiUrl url of the API
+ */
 const bindEventOrder = function (cart, apiUrl) {
   const btn = getById("order");
   btn.addEventListener("click", async function (e) {
@@ -225,7 +311,9 @@ const bindEventOrder = function (cart, apiUrl) {
     } else return;
   });
 };
-
+/**
+ * Initialise the page, create the cart and add the events handler and display the order id on the confirmation page
+ */
 const init = async function () {
   if (new URLSearchParams(document.location.search).get("id")) {
     getById("orderId").textContent = new URLSearchParams(
