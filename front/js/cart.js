@@ -90,8 +90,10 @@ const updateCart = function (
  */
 const removeItemFromCart = function (products, cart, item) {
   const index = cart.findIndex(
-    (prod) => prod._id === item._id && prod.color === item.color
+    (prod) => prod._id === item._id && prod.color === item.colors
   );
+  console.log(item);
+  console.log(index);
   cart.splice(index, 1);
   products.splice(index, 1);
   localStorage.setItem("cart", JSON.stringify(cart));
@@ -104,11 +106,11 @@ const removeItemFromCart = function (products, cart, item) {
 const filterCart = function (cart) {
   const results = [];
   cart.forEach((el) => {
-    if (results.findIndex((id) => id === el._id) >= 0) {
+    if (results.findIndex((id) => id === el._id) < 0) {
       results.push(el._id);
     }
-    return results;
   });
+  return results;
 };
 /**
  * Calaculate the total quantity and price of the products in the cart
@@ -160,16 +162,24 @@ const bindEventQuantity = function (
   priceTotalCont
 ) {
   cont.addEventListener("change", function () {
-    const quantity = Number(cont.value);
-    updateCart(
-      products,
-      cart,
-      quantity,
-      product,
-      contentPrice,
-      quantityTotalCont,
-      priceTotalCont
-    );
+    if (Number(cont.value) < 1) {
+      cont.value = product.quantity;
+      alert("La quantité doit être au moins égale à 1");
+    } else if (Number(cont.value) > 100) {
+      cont.value = product.quantity;
+      alert("La quantité doit être inférieure à 100");
+    } else {
+      const quantity = Number(cont.value);
+      updateCart(
+        products,
+        cart,
+        quantity,
+        product,
+        contentPrice,
+        quantityTotalCont,
+        priceTotalCont
+      );
+    }
   });
 };
 /**
@@ -205,9 +215,12 @@ const checkName = function () {
   const firstName = getById("firstName").value;
   const lastName = getById("lastName").value;
   const pattern =
-    /^[a-zA-ZàáâäãåąčćęèéêëėįìíîïłńòóôöõøùúûüųūÿýżźñçčšžÀÁÂÄÃÅĄĆČĖĘÈÉÊËÌÍÎÏĮŁŃÒÓÔÖÕØÙÚÛÜŲŪŸÝŻŹÑßÇŒÆČŠŽ∂ð ,.'-]+$/u;
+    /^[a-zA-ZàáâäãåąčćęèéêëėįìíîïłńòóôöõøùúûüųūÿýżźñçčšžÀÁÂÄÃÅĄĆČĖĘÈÉÊËÌÍÎÏĮŁŃÒÓÔÖÕØÙÚÛÜŲŪŸÝŻŹÑßÇŒÆČŠŽ∂ð '-]+$/u;
   if (pattern.test(firstName)) {
+    getById("firstNameErrorMsg").textContent = "";
+
     if (pattern.test(lastName)) {
+      getById("lastNameErrorMsg").textContent = "";
       return true;
     } else {
       getById("lastNameErrorMsg").textContent = "Nom de famille invalide!";
@@ -226,6 +239,7 @@ const checkAddress = function () {
   const address = getById("address").value;
   const pattern = /^[0-9]{0,3} ?[a-zA-Z\s,-]+ ?([0-9]{2}|[0-9]{5})?$/;
   if (pattern.test(address)) {
+    getById("addressErrorMsg").textContent = "";
     return true;
   } else {
     getById("addressErrorMsg").textContent = "Adresse invalide!";
@@ -241,6 +255,7 @@ const checkCity = function () {
   const pattern =
     /^[a-zA-ZàáâäãåąčćęèéêëėįìíîïłńòóôöõøùúûüųūÿýżźñçčšžÀÁÂÄÃÅĄĆČĖĘÈÉÊËÌÍÎÏĮŁŃÒÓÔÖÕØÙÚÛÜŲŪŸÝŻŹÑßÇŒÆČŠŽ∂ð]+(( |-)?[a-zA-ZàáâäãåąčćęèéêëėįìíîïłńòóôöõøùúûüųūÿýżźñçčšžÀÁÂÄÃÅĄĆČĖĘÈÉÊËÌÍÎÏĮŁŃÒÓÔÖÕØÙÚÛÜŲŪŸÝŻŹÑßÇŒÆČŠŽ∂ð])*$/;
   if (pattern.test(city)) {
+    getById("cityErrorMsg").textContent = "";
     return true;
   } else {
     getById("cityErrorMsg").textContent = "Ville invalide!";
@@ -256,6 +271,7 @@ const checkEmail = function () {
   const pattern =
     /^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/i;
   if (pattern.test(email)) {
+    getById("emailErrorMsg").textContent = "";
     return true;
   } else {
     getById("emailErrorMsg").textContent = "Email invalide!";
@@ -271,22 +287,22 @@ const bindEventOrder = function (cart, apiUrl) {
   const btn = getById("order");
   btn.addEventListener("click", async function (e) {
     e.preventDefault();
-    if (!cart) {
+    if (cart.length === 0) {
       alert("Panier vide");
       return;
     }
     if (checkName() && checkAddress() && checkCity() && checkEmail()) {
       const products = filterCart(cart);
-      console.log(products);
+      console.log(cart);
       const contact = {
         firstName: getById("firstName").value,
         lastName: getById("lastName").value,
         address: getById("address").value,
         city: getById("city").value,
         email: getById("email").value,
-        products: products,
       };
       console.log(contact);
+      console.log(products);
 
       fetch(apiUrl + "order", {
         method: "POST",
@@ -303,7 +319,9 @@ const bindEventOrder = function (cart, apiUrl) {
           else return response.json();
         })
         .then((data) => {
+          console.log(data);
           if (data.orderId) {
+            localStorage.removeItem("cart");
             window.location.href = `confirmation.html?id=${data.orderId}`;
           } else throw new Error("Un problème est survenu!");
         })

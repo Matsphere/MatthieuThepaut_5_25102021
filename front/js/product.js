@@ -58,8 +58,12 @@ const addToCart = function (product, quantity, color, id) {
     console.log("nouvel objet");
     cart.push(prod);
   } else {
-    cart[index].quantity += Number(quantity.value);
-    console.log("objet déjà dans panier");
+    if (cart[index].quantity + Number(quantity.value) > 100)
+      alert("La quantité doit être inférieure à 100");
+    else {
+      cart[index].quantity += Number(quantity.value);
+      console.log("objet déjà dans panier");
+    }
   }
   localStorage.setItem("cart", JSON.stringify(cart));
   console.log(cart);
