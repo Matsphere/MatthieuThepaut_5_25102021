@@ -57,38 +57,28 @@ const createCart = async function (cart, apiUrl) {
 /**
  * Updates the quantity of products in the cart and the information on the page (quantity, price, total price and total quantity)
  * @param {array} products an array containing the products in the cart
- * @param {array} cart containing the id, color and quantity for each product selected
  * @param {number} quantity new quantity of the product
  * @param {object} item Product being updated
- * @param {Object} priceCont Html element containing the price of the product being updated
- * @param {Object} quantityTotalCont Html element containing the total quantity of products in the cart
- * @param {object} priceTotalCont Html element containing the total price of the products in the cart
  */
-const updateCart = function (
-  products,
-  cart,
-  quantity,
-  item,
-  priceCont,
-  quantityTotalCont,
-  priceTotalCont
-) {
+const updateCart = function (products, quantity, item) {
+  const cart = JSON.parse(localStorage.getItem("cart")) || [];
+  const priceCont = document.querySelector(".cart__item__content__price");
   const index = cart.findIndex(
     (prod) => prod._id === item._id && prod.color === item.colors
   );
   cart[index].quantity = quantity;
   products[index].quantity = quantity;
   priceCont.textContent = products[index].price * quantity + "€";
-  updateTotals(products, quantityTotalCont, priceTotalCont);
+  updateTotals(products);
   localStorage.setItem("cart", JSON.stringify(cart));
 };
 /**
  * Removes the item from the cart
  * @param {Array} products an array containing the products in the cart
- * @param {Array} cart containing the id, color and quantity for each product selected
  * @param {object} item Product being removed
  */
-const removeItemFromCart = function (products, cart, item) {
+const removeItemFromCart = function (products, item) {
+  const cart = JSON.parse(localStorage.getItem("cart")) || [];
   const index = cart.findIndex(
     (prod) => prod._id === item._id && prod.color === item.colors
   );
@@ -134,78 +124,42 @@ const calculateTotals = function (products) {
 /**
  * Updates the total quantity of products and the total price
  * @param {Array} products an array containing the products in the cart
- * @param {Object} quantity Html element containing the total quantity of products in the cart
- * @param {Object} price Html element containing the total price of the products in the cart
  */
-const updateTotals = function (products, quantity, price) {
+const updateTotals = function (products) {
+  const quantity = getById("totalQuantity");
+  const price = getById("totalPrice");
   const totals = calculateTotals(products);
   quantity.textContent = totals[0];
   price.textContent = totals[1];
 };
 /**
- * Adds the event listener to update the quantity of products
- * @param {Object} cont HTML input element containing the quantity of the product
+ * function executed by the event listener to update the quantity of products
+ * @param {Object} event event "change" dof the quantity input of the product
  * @param {Array} products an array containing the products in the cart
- * @param {Array} cart containing the id, color and quantity for each product selected
  * @param {Object} product Product being updated
- * @param {Object} contentPrice Html element containing the price of the product being updated
- * @param {Object} quantityTotalCont Html element containing the total quantity of products in the cart
- * @param {object} priceTotalCont Html element containing the total price of the products in the cart
  */
-const bindEventQuantity = function (
-  cont,
-  products,
-  cart,
-  product,
-  contentPrice,
-  quantityTotalCont,
-  priceTotalCont
-) {
-  cont.addEventListener("change", function () {
-    if (Number(cont.value) < 1) {
-      cont.value = product.quantity;
-      alert("La quantité doit être au moins égale à 1");
-    } else if (Number(cont.value) > 100) {
-      cont.value = product.quantity;
-      alert("La quantité doit être inférieure à 100");
-    } else {
-      const quantity = Number(cont.value);
-      updateCart(
-        products,
-        cart,
-        quantity,
-        product,
-        contentPrice,
-        quantityTotalCont,
-        priceTotalCont
-      );
-    }
-  });
+const change = function (event, products, product) {
+  if (Number(event.target.value) < 1) {
+    event.target.value = product.quantity;
+    alert("La quantité doit être au moins égale à 1");
+  } else if (Number(cont.value) > 100) {
+    event.target.value = product.quantity;
+    alert("La quantité doit être inférieure à 100");
+  } else {
+    const quantity = Number(event.target.value);
+    updateCart(products, quantity, product);
+  }
 };
 /**
- Adds the event listener to update the quantity of products
- * @param {Object} cont HTML element on which the delete event is added
+ function executed by the event listener to delete the product from the cart
  * @param {Array} products an array containing the products in the cart
- * @param {Array} cart containing the id, color and quantity for each product selected
  * @param {Object} product Product being removed
- * @param {Object} quantityTotalCont Html element containing the total quantity of products in the cart
- * @param {object} priceTotalCont Html element containing the total price of the products in the cart
  * @param {Object} article Html article element being removed for the DOM
  */
-const bindEventDelete = function (
-  cont,
-  products,
-  cart,
-  product,
-  quantityTotalCont,
-  priceTotalCont,
-  article
-) {
-  cont.addEventListener("click", function () {
-    removeItemFromCart(products, cart, product);
-    updateTotals(products, quantityTotalCont, priceTotalCont);
-    article.remove();
-  });
+const deleteArticle = function (products, product, article) {
+  removeItemFromCart(products, product);
+  updateTotals(products);
+  article.remove();
 };
 /**
  * Checks the format of the first name and last name input field
@@ -333,123 +287,124 @@ const bindEventOrder = function (cart, apiUrl) {
  * Initialise the page, create the cart and add the events handler and display the order id on the confirmation page
  */
 const init = async function () {
-  if (new URLSearchParams(document.location.search).get("id")) {
-    getById("orderId").textContent = new URLSearchParams(
-      document.location.search
-    ).get("id");
-  } else {
-    const quantityTotalCont = getById("totalQuantity");
-    const priceTotalCont = getById("totalPrice");
-    const cartContainer = document.getElementById("cart__items");
-    const cart = JSON.parse(localStorage.getItem("cart")) || [];
-    const products = await createCart(cart, apiUrl);
+  try {
+    if (new URLSearchParams(document.location.search).get("id")) {
+      getById("orderId").textContent = new URLSearchParams(
+        document.location.search
+      ).get("id");
+    } else {
+      const cartContainer = document.getElementById("cart__items");
+      const cart = JSON.parse(localStorage.getItem("cart")) || [];
+      const products = await createCart(cart, apiUrl);
 
-    console.log(products);
-    products.forEach((product) => {
-      const article = createEl(
-        "article",
-        ["class", "data-id"],
-        ["cart__item", product._id]
-      );
-      cartContainer.appendChild(article);
+      console.log(products);
+      products.forEach((product) => {
+        const article = createEl(
+          "article",
+          ["class", "data-id"],
+          ["cart__item", product._id]
+        );
+        cartContainer.appendChild(article);
 
-      const divImg = createEl("div", ["class"], ["cart__item__img"]);
-      article.appendChild(divImg);
+        const divImg = createEl("div", ["class"], ["cart__item__img"]);
+        article.appendChild(divImg);
 
-      const img = createEl(
-        "img",
-        ["src", "alt"],
-        [product.imageUrl, product.altTxt]
-      );
-      divImg.appendChild(img);
+        const img = createEl(
+          "img",
+          ["src", "alt"],
+          [product.imageUrl, product.altTxt]
+        );
+        divImg.appendChild(img);
 
-      const divContent = createEl("div", ["class"], ["cart__item__content"]);
-      article.appendChild(divContent);
+        const divContent = createEl("div", ["class"], ["cart__item__content"]);
+        article.appendChild(divContent);
 
-      const divContentPrice = createEl(
-        "div",
-        ["class"],
-        ["cart__item__content__titlePrice"]
-      );
-      divContent.appendChild(divContentPrice);
+        const divContentPrice = createEl(
+          "div",
+          ["class"],
+          ["cart__item__content__titlePrice"]
+        );
+        divContent.appendChild(divContentPrice);
 
-      const contentTitle = createEl("h2");
-      contentTitle.textContent = product.name;
-      divContentPrice.appendChild(contentTitle);
+        const contentTitle = createEl("h2");
+        contentTitle.textContent = product.name;
+        divContentPrice.appendChild(contentTitle);
 
-      const contentPrice = createEl("p");
-      contentPrice.textContent = product.price * product.quantity + "€";
-      divContentPrice.appendChild(contentPrice);
+        const contentPrice = createEl(
+          "p",
+          ["class"],
+          ["cart__item__content__price"]
+        );
+        contentPrice.textContent = product.price * product.quantity + "€";
+        divContentPrice.appendChild(contentPrice);
 
-      const divContentSettings = createEl(
-        "div",
-        ["class"],
-        ["cart__item__content__settings"]
-      );
-      divContent.appendChild(divContentSettings);
+        const divContentSettings = createEl(
+          "div",
+          ["class"],
+          ["cart__item__content__settings"]
+        );
+        divContent.appendChild(divContentSettings);
 
-      const divSettingsColor = createEl(
-        "div",
-        ["class"],
-        ["cart__item__content__settings__color"]
-      );
-      divContentSettings.appendChild(divSettingsColor);
+        const divSettingsColor = createEl(
+          "div",
+          ["class"],
+          ["cart__item__content__settings__color"]
+        );
+        divContentSettings.appendChild(divSettingsColor);
 
-      const settingsColor = createEl("p");
-      settingsColor.textContent = product.colors;
-      divContentSettings.appendChild(settingsColor);
+        const settingsColor = createEl("p");
+        settingsColor.textContent = product.colors;
+        divContentSettings.appendChild(settingsColor);
 
-      const divSettingsQuantity = createEl(
-        "div",
-        ["class"],
-        ["cart__item__content__settings__quantity"]
-      );
-      divContentSettings.appendChild(divSettingsQuantity);
+        const divSettingsQuantity = createEl(
+          "div",
+          ["class"],
+          ["cart__item__content__settings__quantity"]
+        );
+        divContentSettings.appendChild(divSettingsQuantity);
 
-      const settingsQuantity = createEl("p");
-      settingsQuantity.textContent = "Qté : ";
-      divContentSettings.appendChild(settingsQuantity);
+        const settingsQuantity = createEl("p");
+        settingsQuantity.textContent = "Qté : ";
+        divContentSettings.appendChild(settingsQuantity);
 
-      const settingsQuantityCont = createEl(
-        "input",
-        ["type", "class", "name", "min", "max", "value"],
-        ["number", "itemQuantity", "itemQuantity", "1", "100", product.quantity]
-      );
-      divContentSettings.appendChild(settingsQuantityCont);
-      bindEventQuantity(
-        settingsQuantityCont,
-        products,
-        cart,
-        product,
-        contentPrice,
-        quantityTotalCont,
-        priceTotalCont
-      );
+        const settingsQuantityCont = createEl(
+          "input",
+          ["type", "class", "name", "min", "max", "value"],
+          [
+            "number",
+            "itemQuantity",
+            "itemQuantity",
+            "1",
+            "100",
+            product.quantity,
+          ]
+        );
+        divContentSettings.appendChild(settingsQuantityCont);
+        settingsQuantityCont.addEventListener("change", function (e) {
+          change(e, products, product);
+        });
 
-      const divSettingsDelete = createEl(
-        "div",
-        ["class"],
-        ["cart__item__content__settings__delete"]
-      );
-      divContentSettings.appendChild(divSettingsDelete);
+        const divSettingsDelete = createEl(
+          "div",
+          ["class"],
+          ["cart__item__content__settings__delete"]
+        );
+        divContentSettings.appendChild(divSettingsDelete);
 
-      const settingsDelete = createEl("p", ["class"], ["deleteItem"]);
-      settingsDelete.textContent = "Supprimer";
-      divSettingsDelete.appendChild(settingsDelete);
-      bindEventDelete(
-        settingsDelete,
-        products,
-        cart,
-        product,
-        quantityTotalCont,
-        priceTotalCont,
-        article
-      );
-    });
+        const settingsDelete = createEl("p", ["class"], ["deleteItem"]);
+        settingsDelete.textContent = "Supprimer";
+        divSettingsDelete.appendChild(settingsDelete);
+        settingsDelete.addEventListener("click", function (e) {
+          deleteArticle(products, product, article);
+        });
+      });
 
-    updateTotals(products, quantityTotalCont, priceTotalCont);
+      updateTotals(products);
 
-    bindEventOrder(cart, apiUrl);
+      bindEventOrder(cart, apiUrl);
+    }
+  } catch (err) {
+    console.log(err.message);
   }
 };
 
