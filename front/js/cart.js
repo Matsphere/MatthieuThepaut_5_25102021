@@ -59,13 +59,14 @@ const createCart = async function (cart, apiUrl) {
  * @param {array} products an array containing the products in the cart
  * @param {number} quantity new quantity of the product
  * @param {object} item Product being updated
+ * @param {object} priceCont Container of the product's price
  */
-const updateCart = function (products, quantity, item) {
+const updateCart = function (products, quantity, item, priceCont) {
   const cart = JSON.parse(localStorage.getItem("cart")) || [];
-  const priceCont = document.querySelector(".cart__item__content__price");
   const index = cart.findIndex(
     (prod) => prod._id === item._id && prod.color === item.colors
   );
+  console.log(index);
   cart[index].quantity = quantity;
   products[index].quantity = quantity;
   priceCont.textContent = products[index].price * quantity + "€";
@@ -137,17 +138,18 @@ const updateTotals = function (products) {
  * @param {Object} event event "change" dof the quantity input of the product
  * @param {Array} products an array containing the products in the cart
  * @param {Object} product Product being updated
+ * @param {Object} priceCont container of the product's price
  */
-const change = function (event, products, product) {
+const change = function (event, products, product, priceCont) {
   if (Number(event.target.value) < 1) {
     event.target.value = product.quantity;
     alert("La quantité doit être au moins égale à 1");
-  } else if (Number(cont.value) > 100) {
+  } else if (Number(event.target.value) > 100) {
     event.target.value = product.quantity;
     alert("La quantité doit être inférieure à 100");
   } else {
     const quantity = Number(event.target.value);
-    updateCart(products, quantity, product);
+    updateCart(products, quantity, product, priceCont);
   }
 };
 /**
@@ -381,7 +383,7 @@ const init = async function () {
         );
         divContentSettings.appendChild(settingsQuantityCont);
         settingsQuantityCont.addEventListener("change", function (e) {
-          change(e, products, product);
+          change(e, products, product, contentPrice);
         });
 
         const divSettingsDelete = createEl(
